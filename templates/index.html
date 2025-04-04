@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Image</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .content {
+            flex: 3;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .log-panel {
+            flex: 1;
+            background-color: #f8f9fa;
+            padding: 15px;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+
+        input[type="submit"] {
+            background: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background: #0056b3;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        #result {
+            font-size: 1.2em;
+            color: darkred;
+            margin-bottom: 20px;
+        }
+
+        /* Container for side-by-side images */
+        .image-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .log-panel h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .log-messages {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .log-messages li {
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .log-messages .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .log-messages .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .log-messages .debug {
+            background-color: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Upload Image for Tumor Detection</h1>
+        <form id="upload-form" enctype="multipart/form-data">
+            <label for="image-input">Choose an image:</label>
+            <input type="file" name="image" id="image-input" required>
+            <input type="submit" value="Upload">
+        </form>
+
+        <h2>Result</h2>
+        <p id="result"></p>
+
+        <div class="image-container">
+            <div>
+                <h2>Original Image</h2>
+                <img id="original-image" style="display:none;" alt="Original Image">
+            </div>
+            <div>
+                <h2>Processed Image</h2>
+                <img id="processed-image" style="display:none;" alt="Processed Image">
+            </div>
+        </div>
+    </div>
+
+    <div class="log-panel">
+        <h3>Logs</h3>
+        <ul class="log-messages" id="log-messages"></ul>
+    </div>
+
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const formData = new FormData();
+            const imageInput = document.getElementById('image-input');
+            formData.append('image', imageInput.files[0]);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                const originalImgElement = document.getElementById('original-image');
+                originalImgElement.src = `data:image/png;base64,${data.original_image}`;
+                originalImgElement.style.display = 'block';
+
+                const processedImgElement = document.getElementById('processed-image');
+                processedImgElement.src = `data:image/png;base64,${data.image}`;
+                processedImgElement.style.display = 'block';
+
+                const resultElement = document.getElementById('result');
+                resultElement.innerHTML = `
+                    Diagnosis: ${data.diagnosis}<br>
+                    Stage: ${data.tumor_stage}<br>
+                    Tumor Percentage: ${data.tumor_percentage}%<br>
+                    Chance of Cancer: ${data.cancer_chance}%
+                `;
+
+                const logsElement = document.getElementById('log-messages');
+                logsElement.innerHTML = '';
+                data.logs.forEach(log => {
+                    const li = document.createElement('li');
+                    li.textContent = log;
+                    if (log.toLowerCase().includes('error')) {
+                        li.className = 'error';
+                    } else if (log.toLowerCase().includes('debug')) {
+                        li.className = 'debug';
+                    } else {
+                        li.className = 'info';
+                    }
+                    logsElement.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error processing image:', error);
+                alert('There was an error processing the image. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accuracy Testing</title>
+    <script>
+        async function testAccuracy() {
+            const response = await fetch('/accuracy');
+            const data = await response.json();
+            document.getElementById('result').textContent = `Model Accuracy: ${data.accuracy}`;
+            const graph = document.getElementById('graph');
+            graph.src = '/accuracy/graph';
+            graph.style.display = 'block';
+        }
+    </script>
+</head>
+<body>
+    <h1>Accuracy Testing</h1>
+    <button onclick="testAccuracy()">Test Accuracy of My Model</button>
+    <button onclick="window.location.href='/proofs'">Proofs</button>
+    <p id="result"></p>
+    <img id="graph" style="display:none; max-width:100%;">
+</body>
+</html>
